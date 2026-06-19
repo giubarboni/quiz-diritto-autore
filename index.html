@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080259;
+      --bg-hover: #060247;
+      --surface: #1A1566;
+      --white: #FFFFFF;
+      --white60: rgba(255,255,255,0.6);
+      --white20: rgba(255,255,255,0.2);
+      --white10: rgba(255,255,255,0.1);
+      --green: #3DD68C;
+      --red: #FF6B6B;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0;
+    }
+
+    /* ── Header ── */
+    .q-header {
+      padding: 24px 20px 16px;
+      flex-shrink: 0;
+    }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .progress-meta span {
+      font-size: 12px;
+      color: var(--white60);
+    }
+    .bar-track {
+      height: 3px;
+      background: var(--white10);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: var(--white);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── Question body ── */
+    .q-body {
+      flex: 1;
+      padding: 24px 20px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .q-number {
+      font-size: 12px;
+      color: var(--white60);
+      margin-bottom: 6px;
+    }
+    .q-text {
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--white);
+      line-height: 1.5;
+    }
+
+    /* ── Answers ── */
+    .answers {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ans-btn {
+      width: 100%;
+      text-align: left;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 2px solid transparent;
+      background: var(--surface);
+      font-size: 15px;
+      color: var(--white);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      line-height: 1.4;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ans-btn:hover:not(:disabled) { background: var(--bg-hover); }
+    .ans-btn:active:not(:disabled) { background: var(--bg-hover); }
+    .ans-btn:disabled { cursor: default; }
+    .ans-btn.selected { border: 2px solid var(--white); background: var(--surface); }
+
+    .ans-btn.result-correct { border-color: var(--green); background: rgba(61,214,140,0.12); }
+    .ans-btn.result-correct .letter-circle { background: var(--green); color: #080259; border-color: var(--green); }
+    .ans-btn.result-wrong { border-color: var(--red); background: rgba(255,107,107,0.10); }
+    .ans-btn.result-wrong .letter-circle { background: var(--red); color: #fff; border-color: var(--red); }
+
+    .letter-circle {
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid var(--white20);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--white60);
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .ans-btn.selected .letter-circle { border-color: var(--white); color: var(--white); }
+
+    /* ── Next button ── */
+    .next-btn {
+      margin-top: auto;
+      width: 100%;
+      padding: 16px;
+      background: var(--white);
+      color: var(--bg);
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      display: none;
+      transition: opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .next-btn:hover { opacity: 0.88; }
+    .next-btn:active { opacity: 0.75; }
+
+    /* ── Result screen ── */
+    #result-view {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px 40px;
+      text-align: center;
+      gap: 0;
+    }
+    .result-icon { font-size: 60px; margin-bottom: 24px; }
+    .result-pts { font-size: 64px; font-weight: 500; color: var(--white); line-height: 1; }
+    .result-pts-sub { font-size: 14px; color: var(--white60); margin: 8px 0 28px; }
+    .result-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 18px;
+      width: 100%;
+      margin-bottom: 28px;
+      text-align: left;
+    }
+    .result-title { font-size: 18px; font-weight: 500; color: var(--white); margin-bottom: 6px; }
+    .result-desc { font-size: 14px; color: var(--white60); line-height: 1.6; }
+    .restart-btn {
+      width: 100%;
+      margin-top: auto;
+      padding: 16px;
+      background: var(--white);
+      color: var(--bg);
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .restart-btn:hover { opacity: 0.88; }
+    .restart-btn:active { opacity: 0.75; }
+
+    /* ── Quiz view wrapper ── */
+    #quiz-view {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="quiz-view">
+    <div class="q-header">
+      <div class="progress-meta">
+        <span id="prog-label">1 di 5</span>
+        <span id="prog-pct">20%</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" id="bar" style="width: 20%"></div>
+      </div>
+    </div>
+    <div class="q-body">
+      <div>
+<p class="q-text" id="q-text"></p>
+      </div>
+      <div class="answers" id="answers"></div>
+      <button class="next-btn" id="next-btn">Continua →</button>
+    </div>
+  </div>
+
+  <div id="result-view">
+    <div class="result-icon" id="r-icon"></div>
+    <div class="result-pts" id="r-pts"></div>
+    <p class="result-pts-sub" id="r-sub"></p>
+    <div class="result-card">
+      <p class="result-title" id="r-title"></p>
+      <p class="result-desc" id="r-desc"></p>
+    </div>
+    <button class="restart-btn" onclick="restart()">Riprova ↺</button>
+  </div>
+
+  <script>
+    const Qs = [
+      {
+        text: "Ma questa SIAE poi, che cos'è?",
+        answers: [
+          "Un ente pubblico a cui ci si può associare liberamente, autorizzato a gestire i diritti degli autori",
+          "Un ente pubblico al quale è obbligatorio iscriversi per potere pubblicare la propria musica",
+          "Un nemico del popolo",
+          "Un'istituzione dello Stato che ha il compito di raccogliere la tassa sulle utilizzazioni di prodotti culturali"
+        ],
+        correct: 0
+      },
+      {
+        text: "Cosa succede se firmo un contratto discografico con un'etichetta?",
+        answers: [
+          "Tutti i profitti della mia musica andranno a loro",
+          "Tutti i profitti, ma anche le responsabilità morali, andranno a loro",
+          "L'etichetta sarà incaricata di depositare la mia musica in SIAE",
+          "La mia anima sarà venduta al diavolo e l'unico modo per riscattarla è incidere un album di platino"
+        ],
+        correct: 0
+      },
+      {
+        text: "In quanto artista, musicista, creatore di contenuti, il diritto d'autore mi tutela. Questo vuol dire che:",
+        answers: [
+          "Nessuno può fare opere nate dalla mia stessa idea (es: che bella Falconara Marittima)",
+          "Nessuno può fare opere uguali alle mie (es: un ritornello che dice \"falconara best place on earth, su un giro di DO\")",
+          "Nessuno può più fare musica neo-melodica",
+          "Devo correre in SIAE: solo le opere depositate sono protette"
+        ],
+        correct: 1
+      },
+      {
+        text: "A proposito, come faccio a essere tutelato dal diritto d'autore?",
+        answers: [
+          "Devo inviare una raccomandata A/R con marca da bollo da 16 euro a Carlo Conti",
+          "Devo depositare una copia fisica o digitale in SIAE",
+          "Devo fissare la mia opera su un supporto materiale",
+          "Nulla, basta che la mia opera possa essere considerata originale e creativa"
+        ],
+        correct: 3
+      },
+      {
+        text: "Per quanto tempo mi spettano i profitti per la mia musica?",
+        answers: [
+          "70 anni dalla pubblicazione dell'opera",
+          "70 anni dalla mia morte (l'autore) o, in caso di più autori, dalla morte dell'ultimo di essi",
+          "70 anni, a meno che l'autore non sia Gianni Morandi, nel qual caso è prevista l'immortalità giuridica dell'opera",
+          "50 anni dalla firma del contratto discografico col produttore"
+        ],
+        correct: 1
+      }
+    ];
+
+    const Results = [
+      { icon: "😅", title: "Congratulazioni!", desc: "È quello che direi se ne avessi azzeccata almeno una. Fammi indovinare: per te il diritto d'autore è un colpo di tennis, vero?" },
+      { icon: "🤔", title: "Ci siamo quasi!", desc: "Una scintilla di speranza. Queste domande ti hanno messo in difficoltà ma hai comunque conquistato un punto. Daje forte!" },
+      { icon: "👌", title: "Non male!", desc: "2 su 5, sei a metà strada: qualche lacuna da colmare, ma stai andando nella direzione giusta." },
+      { icon: "💪", title: "Bel risultato!", desc: "Sei sopra la media, non solo nelle birre. Secondo me però possiamo ancora esserti utili." },
+      { icon: "🔥", title: "Ottimo!", desc: "Quasi perfetto! Che dire, sai quasi tutto del diritto d'autore. Magari non la prima cosa che racconti di te a una festa ma insomma, buttalo via." },
+      { icon: "🏆", title: "Si vabbè", desc: "Punteggio pieno, chi sei il mio avvocato? Fabrizio se sei tu guarda che non è divertente." }
+    ];
+
+    let cur = 0, score = 0, selected = null;
+
+    function render() {
+      const q = Qs[cur];
+      const pct = Math.round((cur + 1) / Qs.length * 100);
+      document.getElementById('prog-label').textContent = (cur + 1) + ' di ' + Qs.length;
+      document.getElementById('prog-pct').textContent = pct + '%';
+      document.getElementById('bar').style.width = pct + '%';
+      document.getElementById('q-text').textContent = q.text;
+      document.getElementById('next-btn').style.display = 'none';
+      selected = null;
+
+      const container = document.getElementById('answers');
+      container.innerHTML = '';
+      ['A', 'B', 'C', 'D'].forEach((l, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'ans-btn';
+        btn.innerHTML = '<span class="letter-circle">' + l + '</span><span>' + q.answers[i] + '</span>';
+        btn.onclick = () => pick(i);
+        container.appendChild(btn);
+      });
+    }
+
+    function pick(idx) {
+      if (selected !== null) return;
+      selected = idx;
+      document.querySelectorAll('.ans-btn').forEach(b => b.disabled = true);
+      document.querySelectorAll('.ans-btn')[idx].classList.add('selected');
+      if (idx === Qs[cur].correct) score++;
+      const nb = document.getElementById('next-btn');
+      nb.style.display = 'block';
+      nb.textContent = cur < Qs.length - 1 ? 'Continua →' : 'Vedi il risultato →';
+    }
+
+    document.getElementById('next-btn').onclick = function () {
+      cur++;
+      if (cur < Qs.length) render();
+      else showResult();
+    };
+
+    function showResult() {
+      document.getElementById('quiz-view').style.display = 'none';
+      const rv = document.getElementById('result-view');
+      rv.style.display = 'flex';
+      const r = Results[score];
+      document.getElementById('r-icon').textContent = r.icon;
+      document.getElementById('r-pts').textContent = score + '/5';
+      document.getElementById('r-sub').textContent = score === 1 ? '1 risposta corretta' : score + ' risposte corrette';
+      document.getElementById('r-title').textContent = r.title;
+      document.getElementById('r-desc').textContent = r.desc;
+    }
+
+    function restart() {
+      cur = 0; score = 0; selected = null;
+      document.getElementById('result-view').style.display = 'none';
+      document.getElementById('quiz-view').style.display = 'flex';
+      render();
+    }
+
+    render();
+  </script>
+</body>
+</html>
