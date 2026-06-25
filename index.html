@@ -229,18 +229,18 @@
     .info-btn {
       width: 100%;
       padding: 16px;
-      background: transparent;
+      background: var(--white10);
       color: var(--white);
-      border: 1px solid rgba(255,255,255,0.3);
+      border: 1px solid var(--white20);
       border-radius: 14px;
       font-size: 16px;
       font-weight: 500;
       cursor: pointer;
-      transition: opacity 0.15s;
+      transition: background 0.15s;
       -webkit-tap-highlight-color: transparent;
     }
-    .info-btn:hover { opacity: 0.75; }
-    .info-btn:active { opacity: 0.55; }
+    .info-btn:hover { background: var(--white20); }
+    .info-btn:active { background: var(--white20); }
 
     /* ── Bottom sheet ── */
     .sheet-overlay {
