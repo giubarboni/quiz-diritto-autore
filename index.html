@@ -178,15 +178,15 @@
       z-index: 1;
     }
     .result-emoji-frame {
-      width: 200px;
-      height: 200px;
+      width: 176px;
+      height: 176px;
       background: rgba(0, 0, 0, 0.2);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .result-icon { font-size: 112px; line-height: 1; }
+    .result-icon { font-size: 96px; line-height: 1; }
     .result-content {
       display: flex;
       flex-direction: column;
@@ -198,6 +198,50 @@
       z-index: 1;
     }
     .result-pts { font-size: 80px; font-weight: 500; color: var(--white); line-height: 1; margin-bottom: 16px; }
+    .nc-badge {
+      display: none;
+      margin-top: -8px;
+      margin-bottom: 8px;
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--white60);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .nc-badge:hover { background: rgba(255,255,255,0.18); }
+    #nc-toast {
+      position: fixed;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 40px);
+      max-width: 400px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 16px;
+      padding: 14px 16px;
+      z-index: 999;
+      transition: top 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      pointer-events: none;
+    }
+    #nc-toast.show { top: 20px; }
+    #nc-toast .toast-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    #nc-toast .toast-body {
+      font-size: 13px;
+      color: var(--white60);
+      line-height: 1.5;
+    }
     .result-pts-sub { display: none; }
     .result-title { font-size: 24px; font-weight: 500; color: var(--white); margin-bottom: 4px; }
     .result-desc { font-size: 14px; color: var(--white60); line-height: 1.6; }
@@ -256,7 +300,7 @@
       width: 100%;
       background: #fff;
       border-radius: 20px 20px 0 0;
-      padding: 32px 24px 40px;
+      padding: 48px 24px 40px;
       color: #080259;
       position: relative;
       animation: slideUp 0.28s cubic-bezier(0.32,0.72,0,1);
@@ -274,7 +318,8 @@
     }
     .sheet-close:hover { color: rgba(8,2,89,0.8); }
     .sheet-more {
-      margin-top: 20px;
+      display: block;
+      margin-top: 36px;
       background: none; border: none; cursor: pointer;
       padding: 0; font-family: inherit;
       font-size: 15px; font-weight: 600; color: #080259;
@@ -558,12 +603,12 @@
     </div>
   </div>
 
+  <div id="nc-toast">
+    <p class="toast-title">Non classificato?</p>
+    <p class="toast-body">Dopo 2 tentativi puoi continuare a giocare, ma il tuo punteggio non sarà salvato. Buon divertimento!</p>
+  </div>
   <div id="result-view">
     <button class="lb-floating-btn" onclick="showLeaderboard()">🏆 Classifica</button>
-    <div id="overlimit-banner" style="display:none; width:100%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:14px 16px; margin-bottom:0; text-align:left; position:relative; z-index:1;">
-      <p style="font-size:15px; font-weight:600; color:var(--white); margin-bottom:4px;">Si vabbè, mille tentativi</p>
-      <p style="font-size:13px; color:var(--white60); line-height:1.5;">Hai superato il numero di tentativi, ma puoi continuare a giocare senza finire in classifica</p>
-    </div>
     <div class="result-emoji-container">
       <div class="result-emoji-frame">
         <div class="result-icon" id="r-icon"></div>
@@ -571,6 +616,7 @@
     </div>
     <div class="result-content">
       <div class="result-pts" id="r-pts"></div>
+      <button class="nc-badge" id="nc-badge" onclick="showNcToast()">Non classificato</button>
       <p class="result-pts-sub" id="r-sub"></p>
       <p class="result-title" id="r-title"></p>
       <p class="result-desc" id="r-desc"></p>
@@ -773,7 +819,7 @@
       document.getElementById('r-sub').textContent = score === 1 ? '1 risposta corretta' : score + ' risposte corrette';
       document.getElementById('r-title').textContent = r.title;
       document.getElementById('r-desc').textContent = r.desc;
-      document.getElementById('overlimit-banner').style.display = isOverLimit ? 'block' : 'none';
+      document.getElementById('nc-badge').style.display = isOverLimit ? 'inline-block' : 'none';
       if (!isOverLimit) {
         incrementAttempts();
         lastEntryName = playerName; lastEntryScore = score; lastEntryTime = elapsed;
@@ -792,6 +838,14 @@
       document.getElementById('result-view').style.display = 'none';
       document.getElementById('leaderboard-view').style.display = 'flex';
       loadLeaderboard();
+    }
+
+    let ncToastTimer = null;
+    function showNcToast() {
+      const toast = document.getElementById('nc-toast');
+      toast.classList.add('show');
+      clearTimeout(ncToastTimer);
+      ncToastTimer = setTimeout(() => toast.classList.remove('show'), 5500);
     }
 
     function backFromLeaderboard() {
