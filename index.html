@@ -519,18 +519,12 @@
   <div id="name-view">
     <div class="name-body">
       <p class="name-title">Come ti chiami?</p>
-      <p class="name-subtitle">Sarà il modo in cui ti contatteremo, lascia un nome o un account social vero!</p>
+      <p class="name-subtitle">Sarà il modo in cui ti contatteremo, lascia un nome o un account social reale!</p>
       <input class="name-input" id="name-input" type="text" placeholder="Il tuo nome" maxlength="30" autocomplete="off">
     </div>
     <div class="cover-bottom">
       <button class="cover-cta" onclick="beginQuiz()">Inizia il quiz →</button>
     </div>
-  </div>
-
-  <div id="exhausted-view" style="display:none; flex-direction:column; flex:1; align-items:center; justify-content:center; padding:40px 32px; text-align:center; gap:12px;">
-    <div style="font-size:64px; line-height:1;">🚫</div>
-    <p style="font-size:22px; font-weight:600; color:var(--white); margin-top:8px;">Hai già partecipato</p>
-    <p style="font-size:14px; color:var(--white60); line-height:1.6;">Puoi fare il quiz al massimo 2 volte.<br>Hai già raggiunto il limite.</p>
   </div>
 
   <div id="quiz-view" style="display:none">
@@ -554,6 +548,10 @@
 
   <div id="result-view">
     <button class="lb-floating-btn" onclick="showLeaderboard()">🏆 Classifica</button>
+    <div id="overlimit-banner" style="display:none; width:100%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:14px 16px; margin-bottom:0; text-align:left; position:relative; z-index:1;">
+      <p style="font-size:15px; font-weight:600; color:var(--white); margin-bottom:4px;">Si vabbè, quanto ci vuoi riprovare?</p>
+      <p style="font-size:13px; color:var(--white60); line-height:1.5;">Hai superato il numero massimo di tentativi, puoi continuare a giocare ma i tuoi punteggi non saranno salvati.</p>
+    </div>
     <div class="result-emoji-container">
       <div class="result-emoji-frame">
         <div class="result-icon" id="r-icon"></div>
@@ -678,6 +676,7 @@
     let playerName = '';
     let startTime = null;
     let lastEntryName = '', lastEntryScore = 0, lastEntryTime = 0;
+    let isOverLimit = false;
 
     function startQuiz() {
       document.getElementById('cover-view').style.display = 'none';
@@ -699,21 +698,12 @@
       const input = document.getElementById('name-input');
       const name = input.value.trim();
       if (!name) { input.focus(); return; }
-      if (getAttempts() >= MAX_ATTEMPTS) {
-        showAttemptsExhausted();
-        return;
-      }
+      isOverLimit = getAttempts() >= MAX_ATTEMPTS;
       playerName = name;
-      incrementAttempts();
       startTime = Date.now();
       document.getElementById('name-view').style.display = 'none';
       document.getElementById('quiz-view').style.display = 'flex';
       render();
-    }
-
-    function showAttemptsExhausted() {
-      document.getElementById('name-view').style.display = 'none';
-      document.getElementById('exhausted-view').style.display = 'flex';
     }
 
     document.getElementById('name-input').addEventListener('keydown', function(e) {
@@ -768,8 +758,12 @@
       document.getElementById('r-sub').textContent = score === 1 ? '1 risposta corretta' : score + ' risposte corrette';
       document.getElementById('r-title').textContent = r.title;
       document.getElementById('r-desc').textContent = r.desc;
-      lastEntryName = playerName; lastEntryScore = score; lastEntryTime = elapsed;
-      db.ref('scores').push({ name: playerName, score: score, time: elapsed });
+      document.getElementById('overlimit-banner').style.display = isOverLimit ? 'block' : 'none';
+      if (!isOverLimit) {
+        incrementAttempts();
+        lastEntryName = playerName; lastEntryScore = score; lastEntryTime = elapsed;
+        db.ref('scores').push({ name: playerName, score: score, time: elapsed });
+      }
     }
 
     function restart() {
