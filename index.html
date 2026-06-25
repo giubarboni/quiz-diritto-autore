@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quiz</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
@@ -159,7 +161,7 @@
       flex: 1;
       flex-direction: column;
       align-items: center;
-      padding: 48px 20px 200px;
+      padding: 48px 20px 220px;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -388,6 +390,99 @@
     }
     .cover-cta:hover { opacity: 0.9; transform: translate(-1px, -1px); box-shadow: 5px 5px 0 rgba(0,0,0,0.3); }
     .cover-cta:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.3); }
+
+    /* ── Name screen ── */
+    #name-view {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    .name-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 32px 0;
+      text-align: center;
+      gap: 8px;
+    }
+    .name-title {
+      font-size: 22px; font-weight: 600; color: var(--white);
+    }
+    .name-subtitle {
+      font-size: 14px; color: var(--white60); margin-bottom: 16px;
+    }
+    .name-input {
+      width: 100%; padding: 16px;
+      background: var(--surface);
+      border: 2px solid transparent;
+      border-radius: 14px;
+      font-size: 16px; color: var(--white);
+      font-family: inherit;
+      outline: none;
+      -webkit-appearance: none;
+      transition: border-color 0.15s;
+    }
+    .name-input::placeholder { color: var(--white60); }
+    .name-input:focus { border-color: var(--white); }
+
+    /* ── Leaderboard screen ── */
+    #leaderboard-view {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+    .lb-header {
+      padding: 24px 20px 16px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .lb-back {
+      background: none; border: none;
+      color: var(--white60); font-size: 16px; cursor: pointer;
+      padding: 0; -webkit-tap-highlight-color: transparent;
+      font-family: inherit;
+    }
+    .lb-back:hover { color: var(--white); }
+    .lb-header-title {
+      font-size: 17px; font-weight: 600; color: var(--white);
+    }
+    .lb-list {
+      flex: 1; overflow-y: auto;
+      padding: 8px 20px 32px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .lb-row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface);
+      border-radius: 14px; padding: 14px 16px;
+    }
+    .lb-rank {
+      font-size: 20px; min-width: 28px; text-align: center;
+    }
+    .lb-rank-num {
+      font-size: 13px; font-weight: 600; color: var(--white60);
+    }
+    .lb-name {
+      flex: 1; font-size: 15px; font-weight: 500; color: var(--white);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .lb-score {
+      font-size: 15px; font-weight: 600; color: var(--white);
+    }
+    .lb-time {
+      font-size: 13px; color: var(--white60); min-width: 40px; text-align: right;
+    }
+    .lb-loading {
+      text-align: center; color: var(--white60); padding: 48px 0;
+      font-size: 15px;
+    }
   </style>
 </head>
 <body>
@@ -401,6 +496,17 @@
     <p class="cover-powered">powered by Note Legali</p>
     <div class="cover-bottom">
       <button class="cover-cta" onclick="startQuiz()">Inizia →</button>
+    </div>
+  </div>
+
+  <div id="name-view">
+    <div class="name-body">
+      <p class="name-title">Come ti chiami?</p>
+      <p class="name-subtitle">Il tuo nome apparirà in classifica</p>
+      <input class="name-input" id="name-input" type="text" placeholder="Il tuo nome" maxlength="30" autocomplete="off">
+    </div>
+    <div class="cover-bottom">
+      <button class="cover-cta" onclick="beginQuiz()">Inizia il quiz →</button>
     </div>
   </div>
 
@@ -436,8 +542,19 @@
       <p class="result-desc" id="r-desc"></p>
     </div>
     <div class="result-actions">
+      <button class="info-btn" onclick="showLeaderboard()">Classifica 🏆</button>
       <button class="info-btn" onclick="openSheet()">Che cos'è Note Legali?</button>
       <button class="restart-btn" onclick="restart()">Riprova</button>
+    </div>
+  </div>
+
+  <div id="leaderboard-view">
+    <div class="lb-header">
+      <button class="lb-back" onclick="backFromLeaderboard()">← Indietro</button>
+      <span class="lb-header-title">Classifica</span>
+    </div>
+    <div class="lb-list" id="lb-list">
+      <p class="lb-loading">Caricamento...</p>
     </div>
   </div>
 
@@ -459,6 +576,19 @@
   </div>
 
   <script>
+    // Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCGppwZBomPEwI62Y8RApVM2_HhC1G5fJI",
+      authDomain: "quiz-note-legali.firebaseapp.com",
+      databaseURL: "https://quiz-note-legali-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "quiz-note-legali",
+      storageBucket: "quiz-note-legali.firebasestorage.app",
+      messagingSenderId: "938032193097",
+      appId: "1:938032193097:web:3d611c9fe7ec72dc6be998"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     const Qs = [
       {
         text: "Ma questa SIAE poi, che cos'è?",
@@ -522,12 +652,29 @@
     ];
 
     let cur = 0, score = 0, selected = null;
+    let playerName = '';
+    let startTime = null;
 
     function startQuiz() {
       document.getElementById('cover-view').style.display = 'none';
+      document.getElementById('name-view').style.display = 'flex';
+      setTimeout(function() { document.getElementById('name-input').focus(); }, 100);
+    }
+
+    function beginQuiz() {
+      const input = document.getElementById('name-input');
+      const name = input.value.trim();
+      if (!name) { input.focus(); return; }
+      playerName = name;
+      startTime = Date.now();
+      document.getElementById('name-view').style.display = 'none';
       document.getElementById('quiz-view').style.display = 'flex';
       render();
     }
+
+    document.getElementById('name-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') beginQuiz();
+    });
 
     function render() {
       const q = Qs[cur];
@@ -567,6 +714,7 @@
     };
 
     function showResult() {
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
       document.getElementById('quiz-view').style.display = 'none';
       const rv = document.getElementById('result-view');
       rv.style.display = 'flex';
@@ -576,12 +724,66 @@
       document.getElementById('r-sub').textContent = score === 1 ? '1 risposta corretta' : score + ' risposte corrette';
       document.getElementById('r-title').textContent = r.title;
       document.getElementById('r-desc').textContent = r.desc;
+      db.ref('scores').push({ name: playerName, score: score, time: elapsed });
     }
 
     function restart() {
-      cur = 0; score = 0; selected = null;
+      cur = 0; score = 0; selected = null; playerName = ''; startTime = null;
       document.getElementById('result-view').style.display = 'none';
+      document.getElementById('name-input').value = '';
       document.getElementById('cover-view').style.display = 'flex';
+    }
+
+    function showLeaderboard() {
+      document.getElementById('result-view').style.display = 'none';
+      document.getElementById('leaderboard-view').style.display = 'flex';
+      loadLeaderboard();
+    }
+
+    function backFromLeaderboard() {
+      document.getElementById('leaderboard-view').style.display = 'none';
+      document.getElementById('result-view').style.display = 'flex';
+    }
+
+    function loadLeaderboard() {
+      const list = document.getElementById('lb-list');
+      list.innerHTML = '<p class="lb-loading">Caricamento...</p>';
+      db.ref('scores').orderByChild('score').limitToLast(200).once('value', function(snapshot) {
+        const entries = [];
+        snapshot.forEach(function(child) { entries.push(child.val()); });
+        entries.sort(function(a, b) {
+          if (b.score !== a.score) return b.score - a.score;
+          return a.time - b.time;
+        });
+        const top = entries.slice(0, 30);
+        if (top.length === 0) {
+          list.innerHTML = '<p class="lb-loading">Nessun punteggio ancora. Sii il primo!</p>';
+          return;
+        }
+        const medals = ['🥇', '🥈', '🥉'];
+        list.innerHTML = '';
+        top.forEach(function(entry, i) {
+          const row = document.createElement('div');
+          row.className = 'lb-row';
+          const mins = Math.floor(entry.time / 60);
+          const secs = entry.time % 60;
+          const timeStr = mins > 0 ? mins + 'm ' + secs + 's' : secs + 's';
+          const rankEl = i < 3
+            ? '<span class="lb-rank">' + medals[i] + '</span>'
+            : '<span class="lb-rank lb-rank-num">' + (i + 1) + '</span>';
+          row.innerHTML = rankEl +
+            '<span class="lb-name">' + escapeHtml(entry.name) + '</span>' +
+            '<span class="lb-score">' + entry.score + '/5</span>' +
+            '<span class="lb-time">' + timeStr + '</span>';
+          list.appendChild(row);
+        });
+      });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
     }
 
     function openSheet() {
