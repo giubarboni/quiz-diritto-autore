@@ -159,11 +159,11 @@
       flex: 1;
       flex-direction: column;
       align-items: center;
-      padding: 48px 20px 88px;
+      padding: 48px 20px 124px;
       text-align: center;
       position: relative;
       overflow: hidden;
-      background: radial-gradient(ellipse at 50% 30%, #1104BF 0%, #080259 65%);
+      background: radial-gradient(ellipse at 50% 30%, #1104BF 0%, #080259 40%);
     }
     .result-emoji-container {
       flex: 1;
@@ -175,15 +175,15 @@
       z-index: 1;
     }
     .result-emoji-frame {
-      width: 220px;
-      height: 220px;
+      width: 200px;
+      height: 200px;
       background: rgba(0, 0, 0, 0.2);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .result-icon { font-size: 120px; line-height: 1; }
+    .result-icon { font-size: 112px; line-height: 1; }
     .result-content {
       display: flex;
       flex-direction: column;
@@ -194,7 +194,7 @@
       z-index: 1;
     }
     .result-pts { font-size: 80px; font-weight: 500; color: var(--white); line-height: 1; margin-bottom: 4px; }
-    .result-pts-sub { font-size: 14px; color: var(--white60); margin-bottom: 16px; }
+    .result-pts-sub { display: none; }
     .result-title { font-size: 24px; font-weight: 500; color: var(--white); margin-bottom: 6px; }
     .result-desc { font-size: 14px; color: var(--white60); line-height: 1.6; }
     .restart-btn {
@@ -374,7 +374,7 @@
       <p class="result-title" id="r-title"></p>
       <p class="result-desc" id="r-desc"></p>
     </div>
-    <button class="restart-btn" onclick="restart()">Riprova ↺</button>
+    <button class="restart-btn" onclick="restart()">Riprova</button>
   </div>
 
   <script>
@@ -470,17 +470,16 @@
     }
 
     function pick(idx) {
-      if (selected !== null) return;
       selected = idx;
-      document.querySelectorAll('.ans-btn').forEach(b => b.disabled = true);
+      document.querySelectorAll('.ans-btn').forEach(b => b.classList.remove('selected'));
       document.querySelectorAll('.ans-btn')[idx].classList.add('selected');
-      if (idx === Qs[cur].correct) score++;
       const nb = document.getElementById('next-btn');
       nb.style.display = 'block';
       nb.textContent = cur < Qs.length - 1 ? 'Continua →' : 'Vedi il risultato →';
     }
 
     document.getElementById('next-btn').onclick = function () {
+      if (selected === Qs[cur].correct) score++;
       cur++;
       if (cur < Qs.length) render();
       else showResult();
