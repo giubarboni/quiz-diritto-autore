@@ -527,6 +527,12 @@
     </div>
   </div>
 
+  <div id="exhausted-view" style="display:none; flex-direction:column; flex:1; align-items:center; justify-content:center; padding:40px 32px; text-align:center; gap:12px;">
+    <div style="font-size:64px; line-height:1;">🚫</div>
+    <p style="font-size:22px; font-weight:600; color:var(--white); margin-top:8px;">Hai già partecipato</p>
+    <p style="font-size:14px; color:var(--white60); line-height:1.6;">Puoi fare il quiz al massimo 2 volte.<br>Hai già raggiunto il limite.</p>
+  </div>
+
   <div id="quiz-view" style="display:none">
     <div class="q-header">
       <div class="progress-meta">
@@ -679,15 +685,35 @@
       setTimeout(function() { document.getElementById('name-input').focus(); }, 100);
     }
 
+    const ATTEMPTS_KEY = 'quiz-attempts';
+    const MAX_ATTEMPTS = 2;
+
+    function getAttempts() {
+      try { return parseInt(localStorage.getItem(ATTEMPTS_KEY) || '0', 10); } catch { return 0; }
+    }
+    function incrementAttempts() {
+      try { localStorage.setItem(ATTEMPTS_KEY, getAttempts() + 1); } catch {}
+    }
+
     function beginQuiz() {
       const input = document.getElementById('name-input');
       const name = input.value.trim();
       if (!name) { input.focus(); return; }
+      if (getAttempts() >= MAX_ATTEMPTS) {
+        showAttemptsExhausted();
+        return;
+      }
       playerName = name;
+      incrementAttempts();
       startTime = Date.now();
       document.getElementById('name-view').style.display = 'none';
       document.getElementById('quiz-view').style.display = 'flex';
       render();
+    }
+
+    function showAttemptsExhausted() {
+      document.getElementById('name-view').style.display = 'none';
+      document.getElementById('exhausted-view').style.display = 'flex';
     }
 
     document.getElementById('name-input').addEventListener('keydown', function(e) {
